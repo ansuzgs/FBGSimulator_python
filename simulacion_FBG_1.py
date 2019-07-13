@@ -5,7 +5,11 @@ from PyQt5.QtWidgets import *
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import (
+FigureCanvas,
+NavigationToolbar2QT as NavigationToolbar
+)
 
 c = 3e8
 class App(QWidget):
@@ -14,7 +18,7 @@ class App(QWidget):
         super().__init__()
         self.left = 10
         self.top = 10
-        self.title = 'PyQt5 example'
+        self.title = 'Simple FBG Simulator'
         self.width = 700
         self.height = 400
         self.Lambda = 1550
@@ -34,6 +38,10 @@ class App(QWidget):
     def initUI(self):
         grid = QGridLayout()
 
+        dynamic_canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        grid.addWidget(dynamic_canvas,0,2, 7, 7)
+        self._dynamic_ax = dynamic_canvas.figure.subplots()
+
         labelLambda = QLabel('lambda (nm)', self)
         labelLambda.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         grid.addWidget(labelLambda, 0, 0)
@@ -47,7 +55,6 @@ class App(QWidget):
         editL = QLineEdit(self)
         editL.setText(str(self.L))
         grid.addWidget(editL, 1, 1)
-
 
         labelStep = QLabel('Step (cm)', self)
         labelStep.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
@@ -85,7 +92,7 @@ class App(QWidget):
                                                         'editng': editng.text(),
                                                         'editf': editf.text(),
                                                         'editTol': editTol.text()}))
-        grid.addWidget(button, 6, 0, 1, 2)
+        grid.addWidget(buttonSimular, 6, 0, 1, 2)
 
         self.setLayout(grid)
         self.setWindowTitle(self.title)
@@ -93,8 +100,8 @@ class App(QWidget):
         self.show()
 
     def simular_button(self, cadena):
-        print(cadena)
-        print(self.Lambda)
+        # print(cadena)
+        # print(self.Lambda)
         self.Lambda = float(cadena['editLambda'])*1e-9
         self.L = float(cadena['editL'])*1e-2
         self.h = -float(cadena['editStep'])*1e-2
@@ -103,14 +110,14 @@ class App(QWidget):
         self.Tol = float(cadena['editTol'])
         self.vg = c/self.ng
 
-        print(self.Lambda)
-        print(c)
+        # print(self.Lambda)
+        # print(c)
         self.simulacion()
 
     def simulacion(self):
-        print('self.f:' + str(self.f))
+        # print('self.f:' + str(self.f))
         f = np.linspace(-self.f, self.f, 10000)
-        print('f:' + str(f[0]))
+        # print('f:' + str(f[0]))
         delta = 2*np.pi*f/self.vg
         z = np.arange(0, -(self.L)+self.h, self.h)
         phi_z = 0
@@ -118,15 +125,15 @@ class App(QWidget):
         R0 = np.ones((1,len(f)))
 
         Sn = S0
-        print('S0: '+ str(S0))
-        print('S0: '+ str(S0.shape))
-        print('Sn: '+ str(Sn))
-        print('Sn: '+ str(Sn.shape))
         Rn = R0
-        print('delta:'+str(delta[0]))
+        # print('S0: '+ str(S0))
+        # print('S0: '+ str(S0.shape))
+        # print('Sn: '+ str(Sn))
+        # print('Sn: '+ str(Sn.shape))
+        # print('delta:'+str(delta[0]))
 
         for i in range(len(z)):
-            print(i)
+            #print(i)
 
             dR1 = 1j*delta*Rn + 1j*Sn*self.k0*np.exp(1j*phi_z)
             dS1 = -1j*delta*Sn - 1j*Rn*self.k0*np.exp(-1j*phi_z)
@@ -159,8 +166,18 @@ class App(QWidget):
             #print('S1: '+ str(S1.shape))
 
         coef = Sn/Rn
-        plt.plot(f*1e-9, np.transpose(10*np.log10(abs(coef))))
-        plt.show()
+        #plt.plot(f*1e-9, np.transpose(10*np.log10(abs(coef))))
+        #plt.show()
+        self._update_canvas(f*1e-9, np.transpose(10*np.log10(abs(coef))))
+
+    def _update_canvas(self, x, y):
+        self._dynamic_ax.clear()
+        #t = np.linspace(0, 10, 101)
+        # Shift the sinusoid as a function of time.
+        self._dynamic_ax.plot(x, y)
+        self._dynamic_ax.figure.canvas.draw()
+
+
 
 if  __name__ == '__main__':
     app = QApplication(sys.argv)
