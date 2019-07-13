@@ -4,11 +4,12 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 import numpy as np
+
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import (
-FigureCanvas,
-NavigationToolbar2QT as NavigationToolbar
+    FigureCanvas,
+    NavigationToolbar2QT as NavigationToolbar
 )
 
 c = 3e8
@@ -20,7 +21,7 @@ class App(QWidget):
         self.top = 10
         self.title = 'Simple FBG Simulator'
         self.width = 700
-        self.height = 400
+        self.height = 500
         self.Lambda = 1550
         self.L = 3
         self.h = 0.01
@@ -39,8 +40,11 @@ class App(QWidget):
         grid = QGridLayout()
 
         dynamic_canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        grid.addWidget(dynamic_canvas,0,2, 7, 7)
+        grid.addWidget(dynamic_canvas,0,2, 7, 8)
         self._dynamic_ax = dynamic_canvas.figure.subplots()
+        self._dynamic_ax.set_xlabel('f (GHz)')
+        self._dynamic_ax.set_ylabel('Reflectivity (dB)')
+
 
         labelLambda = QLabel('lambda (nm)', self)
         labelLambda.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
@@ -159,12 +163,6 @@ class App(QWidget):
             Rn = Rn - deltaR
             Sn = Sn - deltaS
 
-            #print('R1: '+ str(R1[0]))
-            #print('R1: '+ str(R1.shape))
-
-            #print('S1: '+ str(S1[0]))
-            #print('S1: '+ str(S1.shape))
-
         coef = Sn/Rn
         #plt.plot(f*1e-9, np.transpose(10*np.log10(abs(coef))))
         #plt.show()
@@ -172,9 +170,9 @@ class App(QWidget):
 
     def _update_canvas(self, x, y):
         self._dynamic_ax.clear()
-        #t = np.linspace(0, 10, 101)
-        # Shift the sinusoid as a function of time.
         self._dynamic_ax.plot(x, y)
+        self._dynamic_ax.set_xlabel('f (GHz)')
+        self._dynamic_ax.set_ylabel('Reflectivity (dB)')
         self._dynamic_ax.figure.canvas.draw()
 
 
