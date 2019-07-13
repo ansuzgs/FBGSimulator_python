@@ -1,3 +1,6 @@
+import time
+
+from numba import jit
 import sys
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -39,11 +42,12 @@ class App(QWidget):
     def initUI(self):
         grid = QGridLayout()
 
-        dynamic_canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        dynamic_canvas = FigureCanvas(Figure(figsize=(20, 10)))
         grid.addWidget(dynamic_canvas,0,2, 7, 8)
-        self._dynamic_ax = dynamic_canvas.figure.subplots()
-        self._dynamic_ax.set_xlabel('f (GHz)')
-        self._dynamic_ax.set_ylabel('Reflectivity (dB)')
+        self._dynamic_ax = dynamic_canvas.figure.subplots(2,1)
+        self._dynamic_ax[1].set_xlabel('f (GHz)')
+        self._dynamic_ax[0].set_ylabel('Reflectivity (dB)')
+        self._dynamic_ax[1].set_ylabel('Delay (ps)')
 
 
         labelLambda = QLabel('lambda (nm)', self)
@@ -163,17 +167,33 @@ class App(QWidget):
             Rn = Rn - deltaR
             Sn = Sn - deltaS
 
-        coef = Sn/Rn
+        coef = np.transpose(Sn/Rn)
+        tecta = np.unwrap(np.angle(coef))
+        #print(tecta.shape)
+        ret = -np.gradient(tecta[:,0], 2*np.pi*f)
+        print(ret*1e12)
+        #print(tecta[:,0].shape)
+        #print(f.shape)
         #plt.plot(f*1e-9, np.transpose(10*np.log10(abs(coef))))
         #plt.show()
-        self._update_canvas(f*1e-9, np.transpose(10*np.log10(abs(coef))))
+        self._update_canvas(f*1e-9, 20*np.log10(abs(coef)), ret*1e12)
 
-    def _update_canvas(self, x, y):
-        self._dynamic_ax.clear()
-        self._dynamic_ax.plot(x, y)
-        self._dynamic_ax.set_xlabel('f (GHz)')
-        self._dynamic_ax.set_ylabel('Reflectivity (dB)')
-        self._dynamic_ax.figure.canvas.draw()
+    def _update_canvas(self, x, y, y2):
+        self._dynamic_ax[0].clear()
+        self._dynamic_ax[0].plot(x, y)
+        self._dynamic_ax[0].set_ylabel('Reflectivity (dB)')
+        self._dynamic_ax[0].grid()
+        self._dynamic_ax[0].set_xlim([-self.f*1e-9, self.f*1e-9])
+        self._dynamic_ax[0].figure.canvas.draw()
+
+        self._dynamic_ax[1].clear()
+        self._dynamic_ax[1].plot(x, y2)
+        self._dynamic_ax[1].set_xlabel('f (GHz)')
+        self._dynamic_ax[1].set_ylabel('Delay (ps)')
+        self._dynamic_ax[1].grid()
+        self._dynamic_ax[1].set_xlim([-self.f*1e-9, self.f*1e-9])
+        self._dynamic_ax[1].figure.canvas.draw()
+
 
 
 
